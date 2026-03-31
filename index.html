@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -74,44 +75,44 @@ const EMPTY={players:[],matches:{},predictions:{},results:{}};
 let A={...EMPTY};let U=null;let tab="matches";
 
 // ── Supabase ──
-async function dbRead(){try{const r=await fetch(SU+"/rest/v1/bpl?id=eq.main&select=data",{headers:{apikey:SK,Authorization:"Bearer "+SK}});const rows=await r.json();return(rows&&rows.length>0&&rows[0].data)?rows[0].data:{...EMPTY};}catch(e){console.error(e);return{...EMPTY};}}
-async function dbWrite(data){try{await fetch(SU+"/rest/v1/bpl?id=eq.main",{method:"PATCH",headers:{apikey:SK,Authorization:"Bearer "+SK,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data})});}catch(e){console.error(e);}}
+async function dbRead(){try{const r=await fetch(SU+”/rest/v1/bpl?id=eq.main&select=data”,{headers:{apikey:SK,Authorization:“Bearer “+SK}});const rows=await r.json();return(rows&&rows.length>0&&rows[0].data)?rows[0].data:{…EMPTY};}catch(e){console.error(e);return{…EMPTY};}}
+async function dbWrite(data){try{await fetch(SU+”/rest/v1/bpl?id=eq.main”,{method:“PATCH”,headers:{apikey:SK,Authorization:“Bearer “+SK,“Content-Type”:“application/json”,Prefer:“return=minimal”},body:JSON.stringify({data})});}catch(e){console.error(e);}}
 async function load(){A=await dbRead()}
 async function save(){await dbWrite(A)}
 
 function isAdmin(){return U&&A.players.length>0&&U.name===A.players[0].name}
-function showToast(m){const e=document.getElementById("toastEl");e.textContent=m;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
-function bg(k){const t=T[k];if(!t)return'<span style="color:#555">?</span>';return`<div class="badge" style="background:${t.b}"><span style="color:${t.c}">${k}</span></div>`}
-function fmtDate(ts){if(!ts)return"";try{const d=new Date(ts);return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"})+", "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}catch{return""}}
+function showToast(m){const e=document.getElementById(“toastEl”);e.textContent=m;e.style.display=“block”;setTimeout(()=>e.style.display=“none”,2500)}
+function bg(k){const t=T[k];if(!t)return’<span style="color:#555">?</span>’;return`<div class="badge" style="background:${t.b}"><span style="color:${t.c}">${k}</span></div>`}
+function fmtDate(ts){if(!ts)return””;try{const d=new Date(ts);return d.toLocaleDateString(“en-IN”,{day:“numeric”,month:“short”})+”, “+d.toLocaleTimeString(“en-IN”,{hour:“2-digit”,minute:“2-digit”,hour12:true})}catch{return””}}
 function csOn(k){const t=T[k];return`flex:1;padding:11px 6px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;background:${t.b};border:2px solid ${t.c};color:${t.c}`}
-const csOff="flex:1;padding:11px 6px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#666";
+const csOff=“flex:1;padding:11px 6px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#666”;
 
 // ── Scoring: Toss=2, Target range=3 (closest), Winner=5, All 3 correct=+1 bonus ──
 function sc(preds,res){
-  const ns=Object.keys(preds),o={};
-  for(const n of ns)o[n]={total:0,toss:0,target:0,winner:0,bonus:0};
-  if(!res||!res.winner)return o;
-  // Toss: 2 pts each correct
-  for(const n of ns){if(preds[n].toss===res.toss){o[n].toss=2;o[n].total+=2}}
-  // Winner: 5 pts each correct
-  for(const n of ns){if(preds[n].winner===res.winner){o[n].winner=5;o[n].total+=5}}
-  // Target score range: 3 pts to closest predictor(s)
-  if(res.targetScore!=null){
-    let bestDist=Infinity,winners=[];
-    for(const n of ns){
-      const p=preds[n];if(p.targetLow==null||p.targetHigh==null)continue;
-      const mid=(p.targetLow+p.targetHigh)/2;
-      const dist=Math.abs(mid-res.targetScore);
-      if(dist<bestDist){bestDist=dist;winners=[n]}
-      else if(dist===bestDist)winners.push(n);
-    }
-    for(const w of winners){o[w].target=3;o[w].total+=3}
-  }
-  // Bonus: all 3 correct = +1
-  for(const n of ns){
-    if(o[n].toss>0&&o[n].target>0&&o[n].winner>0){o[n].bonus=1;o[n].total+=1}
-  }
-  return o;
+const ns=Object.keys(preds),o={};
+for(const n of ns)o[n]={total:0,toss:0,target:0,winner:0,bonus:0};
+if(!res||!res.winner)return o;
+// Toss: 2 pts each correct
+for(const n of ns){if(preds[n].toss===res.toss){o[n].toss=2;o[n].total+=2}}
+// Winner: 5 pts each correct
+for(const n of ns){if(preds[n].winner===res.winner){o[n].winner=5;o[n].total+=5}}
+// Target score range: 3 pts to closest predictor(s)
+if(res.targetScore!=null){
+let bestDist=Infinity,winners=[];
+for(const n of ns){
+const p=preds[n];if(p.targetLow==null||p.targetHigh==null)continue;
+const mid=(p.targetLow+p.targetHigh)/2;
+const dist=Math.abs(mid-res.targetScore);
+if(dist<bestDist){bestDist=dist;winners=[n]}
+else if(dist===bestDist)winners.push(n);
+}
+for(const w of winners){o[w].target=3;o[w].total+=3}
+}
+// Bonus: all 3 correct = +1
+for(const n of ns){
+if(o[n].toss>0&&o[n].target>0&&o[n].winner>0){o[n].bonus=1;o[n].total+=1}
+}
+return o;
 }
 
 function lboard(){const tots={};for(const p of A.players)tots[p.name]=0;for(const[mid,res]of Object.entries(A.results||{})){const pr=A.predictions?.[mid];if(!pr||!res?.winner)continue;const s=sc(pr,res);for(const[n,v]of Object.entries(s)){if(tots[n]!=null)tots[n]+=v.total}}return A.players.map(p=>({name:p.name,total:tots[p.name]||0})).sort((a,b)=>b.total-a.total)}
@@ -120,76 +121,75 @@ function lboard(){const tots={};for(const p of A.players)tots[p.name]=0;for(cons
 function rangeOptions(){const opts=[];for(let i=80;i<=260;i+=10){opts.push({low:i,high:i+9,label:`${i}-${i+9}`})}return opts}
 
 function isMatchLocked(m){if(!m.date)return false;try{const matchTime=new Date(m.date);const lockTime=new Date(matchTime.getTime()-30*60*1000);return new Date()>=lockTime}catch{return false}}
-function getLockTime(m){if(!m.date)return"";try{const mt=new Date(m.date);const lt=new Date(mt.getTime()-30*60*1000);return lt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}catch{return""}}
+function getLockTime(m){if(!m.date)return””;try{const mt=new Date(m.date);const lt=new Date(mt.getTime()-30*60*1000);return lt.toLocaleTimeString(“en-IN”,{hour:“2-digit”,minute:“2-digit”,hour12:true})}catch{return””}}
 
 async function render(){if(!A.players.length){renderSetup();return}if(!U){renderLogin();return}await load();renderMain()}
 
 // ── SETUP ──
-function renderSetup(){document.getElementById("app").innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><div style="text-align:center;margin-bottom:36px"><img src="${LOGO}" style="height:56px;border-radius:6px;margin-bottom:8px" /><h1 style="color:#FFCB05;font-size:20px;font-weight:800;letter-spacing:2px">BLACK PREMIERE LEAGUE</h1><p style="color:#666;font-size:12px;margin-top:6px">Bragging rights, settled by data</p></div><label class="lb">Players (2 to 4)</label><p style="color:#FFCB05;font-size:10px;margin-bottom:8px">Player 1 = Admin (creates matches, enters results)</p><input id="p1" placeholder="Player 1 (Admin)" style="margin-bottom:8px" /><input id="p2" placeholder="Player 2" style="margin-bottom:8px" /><input id="p3" placeholder="Player 3 (optional)" style="margin-bottom:8px" /><input id="p4" placeholder="Player 4 (optional)" style="margin-bottom:8px" /><p class="hn" style="margin-bottom:18px">Each player sets a 4-digit PIN on first login</p><div id="serr"></div><button class="pri" onclick="doSetup()">Let's Go</button></div>`}
-async function doSetup(){const ns=[1,2,3,4].map(i=>document.getElementById("p"+i).value.trim()).filter(Boolean);if(ns.length<2){document.getElementById("serr").innerHTML='<p class="err">At least 2 names</p>';return}if(new Set(ns.map(n=>n.toLowerCase())).size!==ns.length){document.getElementById("serr").innerHTML='<p class="err">Unique names please</p>';return}A={...EMPTY,players:ns.map(n=>({name:n,pin:null}))};await save();render()}
+function renderSetup(){document.getElementById(“app”).innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><div style="text-align:center;margin-bottom:36px"><img src="${LOGO}" style="height:56px;border-radius:6px;margin-bottom:8px" /><h1 style="color:#FFCB05;font-size:20px;font-weight:800;letter-spacing:2px">BLACK PREMIERE LEAGUE</h1><p style="color:#666;font-size:12px;margin-top:6px">Bragging rights, settled by data</p></div><label class="lb">Players (2 to 4)</label><p style="color:#FFCB05;font-size:10px;margin-bottom:8px">Player 1 = Admin (creates matches, enters results)</p><input id="p1" placeholder="Player 1 (Admin)" style="margin-bottom:8px" /><input id="p2" placeholder="Player 2" style="margin-bottom:8px" /><input id="p3" placeholder="Player 3 (optional)" style="margin-bottom:8px" /><input id="p4" placeholder="Player 4 (optional)" style="margin-bottom:8px" /><p class="hn" style="margin-bottom:18px">Each player sets a 4-digit PIN on first login</p><div id="serr"></div><button class="pri" onclick="doSetup()">Let's Go</button></div>`}
+async function doSetup(){const ns=[1,2,3,4].map(i=>document.getElementById(“p”+i).value.trim()).filter(Boolean);if(ns.length<2){document.getElementById(“serr”).innerHTML=’<p class="err">At least 2 names</p>’;return}if(new Set(ns.map(n=>n.toLowerCase())).size!==ns.length){document.getElementById(“serr”).innerHTML=’<p class="err">Unique names please</p>’;return}A={…EMPTY,players:ns.map(n=>({name:n,pin:null}))};await save();render()}
 
 // ── LOGIN ──
 let lsel=null;
-function renderLogin(){const app=document.getElementById("app");if(!lsel){app.innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><div style="text-align:center;margin-bottom:36px"><img src="${LOGO}" style="height:56px;border-radius:6px;margin-bottom:8px" /><h1 style="color:#FFCB05;font-size:20px;font-weight:800;letter-spacing:2px">BLACK PREMIERE LEAGUE</h1><p style="color:#666;font-size:12px;margin-top:6px">Who are you?</p></div><div style="display:flex;flex-direction:column;gap:8px">${A.players.map((p,i)=>`<button class="pbtn" onclick="pickP('${p.name}')"><span>🧑</span><span style="font-weight:700;flex:1">${p.name}</span>${i===0?'<span class="ab">ADMIN</span>':''}${!p.pin?'<span style="font-size:9px;color:#FFCB05;margin-left:4px">NEW</span>':''}</button>`).join("")}</div></div>`}else{const nw=!lsel.pin;app.innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><button class="txt" onclick="lsel=null;renderLogin()">Back</button><div style="text-align:center;margin:20px 0"><div style="font-size:36px;margin-bottom:6px">🧑</div><div style="color:#fff;font-size:16px;font-weight:700">${lsel.name}${A.players[0].name===lsel.name?' <span class="ab">ADMIN</span>':''}</div><div style="color:#666;font-size:12px;margin-top:4px">${nw?"Create your 4-digit PIN":"Enter PIN"}</div></div><div id="dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px"><div class="pd" id="d0"></div><div class="pd" id="d1"></div><div class="pd" id="d2"></div><div class="pd" id="d3"></div></div><input id="pin" type="tel" maxlength="4" placeholder="----" style="text-align:center;letter-spacing:14px;font-size:18px;caret-color:#FFCB05" oninput="upd()" onkeydown="if(event.key==='Enter')doL()" /><div id="lerr"></div><button class="pri" style="margin-top:14px;opacity:0.35" id="lbtn" onclick="doL()">${nw?"Set PIN":"Login"}</button></div>`;setTimeout(()=>{const e=document.getElementById("pin");if(e)e.focus()},100)}}
+function renderLogin(){const app=document.getElementById(“app”);if(!lsel){app.innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><div style="text-align:center;margin-bottom:36px"><img src="${LOGO}" style="height:56px;border-radius:6px;margin-bottom:8px" /><h1 style="color:#FFCB05;font-size:20px;font-weight:800;letter-spacing:2px">BLACK PREMIERE LEAGUE</h1><p style="color:#666;font-size:12px;margin-top:6px">Who are you?</p></div><div style="display:flex;flex-direction:column;gap:8px">${A.players.map((p,i)=>`<button class="pbtn" onclick="pickP('${p.name}')"><span>🧑</span><span style="font-weight:700;flex:1">${p.name}</span>${i===0?’<span class="ab">ADMIN</span>’:’’}${!p.pin?’<span style="font-size:9px;color:#FFCB05;margin-left:4px">NEW</span>’:’’}</button>`).join("")}</div></div>`}else{const nw=!lsel.pin;app.innerHTML=`<div style="max-width:400px;margin:0 auto;padding:48px 20px"><button class="txt" onclick="lsel=null;renderLogin()">Back</button><div style="text-align:center;margin:20px 0"><div style="font-size:36px;margin-bottom:6px">🧑</div><div style="color:#fff;font-size:16px;font-weight:700">${lsel.name}${A.players[0].name===lsel.name?' <span class="ab">ADMIN</span>':''}</div><div style="color:#666;font-size:12px;margin-top:4px">${nw?"Create your 4-digit PIN":"Enter PIN"}</div></div><div id="dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px"><div class="pd" id="d0"></div><div class="pd" id="d1"></div><div class="pd" id="d2"></div><div class="pd" id="d3"></div></div><input id="pin" type="tel" maxlength="4" placeholder="----" style="text-align:center;letter-spacing:14px;font-size:18px;caret-color:#FFCB05" oninput="upd()" onkeydown="if(event.key==='Enter')doL()" /><div id="lerr"></div><button class="pri" style="margin-top:14px;opacity:0.35" id="lbtn" onclick="doL()">${nw?"Set PIN":"Login"}</button></div>`;setTimeout(()=>{const e=document.getElementById(“pin”);if(e)e.focus()},100)}}
 function pickP(n){lsel=A.players.find(p=>p.name===n);renderLogin()}
-function upd(){const e=document.getElementById("pin");e.value=e.value.replace(/\D/g,"");for(let i=0;i<4;i++){const d=document.getElementById("d"+i);if(e.value.length>i){d.classList.add("on");d.textContent="●"}else{d.classList.remove("on");d.textContent=""}}document.getElementById("lbtn").style.opacity=e.value.length===4?"1":"0.35"}
-async function doL(){const pin=document.getElementById("pin").value;if(pin.length!==4)return;if(!lsel.pin){A.players=A.players.map(p=>p.name===lsel.name?{...p,pin}:p);await save();U={...A.players.find(p=>p.name===lsel.name)};lsel=null;render()}else if(pin===lsel.pin){U=lsel;lsel=null;render()}else{document.getElementById("lerr").innerHTML='<p class="err" style="text-align:center;margin-top:6px">Wrong PIN</p>';document.getElementById("pin").value="";upd()}}
+function upd(){const e=document.getElementById(“pin”);e.value=e.value.replace(/\D/g,””);for(let i=0;i<4;i++){const d=document.getElementById(“d”+i);if(e.value.length>i){d.classList.add(“on”);d.textContent=“●”}else{d.classList.remove(“on”);d.textContent=””}}document.getElementById(“lbtn”).style.opacity=e.value.length===4?“1”:“0.35”}
+async function doL(){const pin=document.getElementById(“pin”).value;if(pin.length!==4)return;if(!lsel.pin){A.players=A.players.map(p=>p.name===lsel.name?{…p,pin}:p);await save();U={…A.players.find(p=>p.name===lsel.name)};lsel=null;render()}else if(pin===lsel.pin){U=lsel;lsel=null;render()}else{document.getElementById(“lerr”).innerHTML=’<p class="err" style="text-align:center;margin-top:6px">Wrong PIN</p>’;document.getElementById(“pin”).value=””;upd()}}
 
 // ── MAIN ──
-function renderMain(){const l=lboard(),admin=isAdmin();const tl=[["matches","Matches"],["standings","Standings"],["history","History"]];if(admin)tl.push(["admin","Admin"]);if(tab==="admin"&&!admin)tab="matches";document.getElementById("app").innerHTML=`<div class="hdr"><div style="display:flex;align-items:center;gap:8px"><img src="${LOGO}" style="height:28px;border-radius:4px" /><span class="logo">BPL</span></div><div style="display:flex;align-items:center;gap:10px"><span style="color:#FFCB05;font-weight:700;font-size:12px">${U.name}${admin?' <span class="ab">ADMIN</span>':''}</span><button class="ghost" onclick="U=null;tab='matches';render()">Exit</button></div></div><div class="lbs">${l.map((p,i)=>`<div class="lbc" style="${i===0&&p.total>0?'border:2px solid #FFCB05;background:rgba(255,203,5,0.06)':''}"><div style="font-size:10px;color:${i===0&&p.total>0?'#FFCB05':'#666'};font-weight:800">${i===0&&p.total>0?'👑':'#'+(i+1)}</div><div style="font-size:12px;font-weight:700;color:${p.name===U.name?'#FFCB05':'#bbb'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px">${p.name}</div><div style="font-size:18px;font-weight:800;color:#fff;font-family:monospace">${p.total}</div></div>`).join("")}</div><div class="tabs">${tl.map(([k,v])=>`<button class="tab ${tab===k?'on':''}" onclick="tab='${k}';renderMain()">${v}</button>`).join("")}</div><div class="cnt" id="tc"></div>`;if(tab==="matches")renderMatches();else if(tab==="standings")renderStandings();else if(tab==="history")renderHistory();else if(tab==="admin")renderAdmin()}
-function getSorted(){return Object.entries(A.matches).sort((a,b)=>{const da=a[1].date||a[1].created,db=b[1].date||b[1].created;return(typeof da==="string"?new Date(da).getTime():da)-(typeof db==="string"?new Date(db).getTime():db)})}
+function renderMain(){const l=lboard(),admin=isAdmin();const tl=[[“matches”,“Matches”],[“standings”,“Standings”],[“history”,“History”]];if(admin)tl.push([“admin”,“Admin”]);if(tab===“admin”&&!admin)tab=“matches”;document.getElementById(“app”).innerHTML=`<div class="hdr"><div style="display:flex;align-items:center;gap:8px"><img src="${LOGO}" style="height:28px;border-radius:4px" /><span class="logo">BPL</span></div><div style="display:flex;align-items:center;gap:10px"><span style="color:#FFCB05;font-weight:700;font-size:12px">${U.name}${admin?' <span class="ab">ADMIN</span>':''}</span><button class="ghost" onclick="U=null;tab='matches';render()">Exit</button></div></div><div class="lbs">${l.map((p,i)=>`<div class="lbc" style="${i===0&&p.total>0?'border:2px solid #FFCB05;background:rgba(255,203,5,0.06)':''}"><div style="font-size:10px;color:${i===0&&p.total>0?'#FFCB05':'#666'};font-weight:800">${i===0&&p.total>0?‘👑’:’#’+(i+1)}</div><div style="font-size:12px;font-weight:700;color:${p.name===U.name?'#FFCB05':'#bbb'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px">${p.name}</div><div style="font-size:18px;font-weight:800;color:#fff;font-family:monospace">${p.total}</div></div>`).join("")}</div><div class="tabs">${tl.map(([k,v])=>`<button class="tab ${tab===k?'on':''}" onclick="tab='${k}';renderMain()">${v}</button>`).join("")}</div><div class="cnt" id="tc"></div>`;if(tab===“matches”)renderMatches();else if(tab===“standings”)renderStandings();else if(tab===“history”)renderHistory();else if(tab===“admin”)renderAdmin()}
+function getSorted(){return Object.entries(A.matches).sort((a,b)=>{const da=a[1].date||a[1].created,db=b[1].date||b[1].created;return(typeof da===“string”?new Date(da).getTime():da)-(typeof db===“string”?new Date(db).getTime():db)})}
+
+let mFilter=“today”; // today | upcoming | past | all
+function isToday(m){if(!m.date)return false;try{const d=new Date(m.date),now=new Date();return d.getDate()===now.getDate()&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}catch{return false}}
+function isFuture(m){if(!m.date)return false;try{const d=new Date(m.date),now=new Date();const dDay=new Date(d.getFullYear(),d.getMonth(),d.getDate());const nDay=new Date(now.getFullYear(),now.getMonth(),now.getDate());return dDay>nDay}catch{return false}}
+function isPast(m){return!isToday(m)&&!isFuture(m)}
 
 // ── MATCHES TAB ──
-function renderMatches(){const el=document.getElementById("tc"),ml=getSorted(),op=ml.filter(([id])=>!A.results[id]),dn=ml.filter(([id])=>A.results[id]);el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">Matches</span><button class="sec" onclick="syncData()">↻ Sync</button></div>${op.length?`<div class="sl">OPEN FOR PREDICTIONS</div>${op.map(([id,m])=>mCard(id,m,false)).join("")}`:''}${dn.length?`<div class="sl" style="margin-top:16px">COMPLETED</div>${dn.map(([id,m])=>mCard(id,m,true)).join("")}`:''}${ml.length===0?'<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No matches yet.</p><p style="font-size:11px">Ask admin to add one.</p></div>':''}`}
+function renderMatches(){
+const el=document.getElementById(“tc”),ml=getSorted();
+// Count for badges
+const todayCount=ml.filter(([*,m])=>isToday(m)).length;
+const upcomingCount=ml.filter(([*,m])=>isFuture(m)).length;
+const pastCount=ml.filter(([id,m])=>isPast(m)||A.results[id]).length;
+// Apply filter
+let filtered=ml;
+if(mFilter===“today”)filtered=ml.filter(([*,m])=>isToday(m));
+else if(mFilter===“upcoming”)filtered=ml.filter(([*,m])=>isFuture(m));
+else if(mFilter===“past”)filtered=ml.filter(([id,m])=>isPast(m)||A.results[id]);
+const op=filtered.filter(([id])=>!A.results[id]);
+const dn=filtered.filter(([id])=>A.results[id]);
+
+el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="color:#fff;font-size:15px;font-weight:700">Matches</span><button class="sec" onclick="syncData()">↻ Sync</button></div> <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto"> ${[["today","Today",todayCount],["upcoming","Upcoming",upcomingCount],["past","Past",pastCount],["all","All",ml.length]].map(([k,l,c])=>`<button onclick="mFilter='${k}';renderMatches()" style="padding:6px 12px;border-radius:16px;font-size:11px;font-weight:700;white-space:nowrap;border:none;cursor:pointer;${mFilter===k?'background:#FFCB05;color:#111':'background:rgba(255,255,255,0.05);color:#888'}">${l}${c?’ (’+c+’)’:’’}</button>`).join("")} </div> ${op.length?`<div class="sl">OPEN FOR PREDICTIONS</div>${op.map(([id,m])=>mCard(id,m,false)).join(””)}`:''} ${dn.length?`<div class="sl" style="margin-top:16px">COMPLETED</div>${dn.map(([id,m])=>mCard(id,m,true)).join(””)}`:''} ${filtered.length===0?`<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No ${mFilter===‘all’?’’:mFilter} matches${mFilter===‘today’?’ today’:’’}.</p></div>`:''}`
+}
 function mCard(id,m,done){
-  const hp=A.predictions?.[id]?.[U.name];
-  const pc=Object.keys(A.predictions?.[id]||{}).length;
-  const dt=fmtDate(m.date);
-  const locked=!!hp&&!done;
-  const timeClosed=!done&&!hp&&isMatchLocked(m);
-  const clickAction=done?`viewResult('${id}')`:hp?`viewPrediction('${id}')`:timeClosed?'':`openPredict('${id}')`;
-  return`<div class="crd" style="cursor:${timeClosed?'default':'pointer'};${timeClosed?'opacity:0.5':''}" ${clickAction?`onclick="${clickAction}"`:''}>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div>
-      ${done?'<span class="tg tg-d">RESULT</span>':locked?'<span class="tg tg-lock">LOCKED</span>':timeClosed?'<span class="tg tg-lock">CLOSED</span>':hp?'<span class="tg tg-g">PREDICTED</span>':'<span class="tg tg-y">PREDICT</span>'}
-    </div>
-    <div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>
-    ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">🏏 ${dt}${getLockTime(m)?' | 🔒 Locks '+getLockTime(m):''}</div>`:''}
-    ${done?`<div style="color:#4ade80;font-size:11px;margin-top:4px">${A.results[id].winner} won</div>`:''}
-    ${timeClosed?'<div style="color:#f87171;font-size:10px;margin-top:4px">Predictions closed</div>':''}
-    ${pc>0?`<div style="color:#444;font-size:10px;margin-top:4px">${pc}/${A.players.length} predicted</div>`:''}
+const hp=A.predictions?.[id]?.[U.name];
+const pc=Object.keys(A.predictions?.[id]||{}).length;
+const dt=fmtDate(m.date);
+const locked=!!hp&&!done;
+const timeClosed=!done&&!hp&&isMatchLocked(m);
+const clickAction=done?`viewResult('${id}')`:hp?`viewPrediction('${id}')`:timeClosed?’’:`openPredict('${id}')`;
+return`<div class="crd" style="cursor:${timeClosed?'default':'pointer'};${timeClosed?'opacity:0.5':''}" ${clickAction?`onclick=”${clickAction}”`:''}> <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"> <div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div> ${done?'<span class="tg tg-d">RESULT</span>':locked?'<span class="tg tg-lock">LOCKED</span>':timeClosed?'<span class="tg tg-lock">CLOSED</span>':hp?'<span class="tg tg-g">PREDICTED</span>':'<span class="tg tg-y">PREDICT</span>'} </div> <div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div> ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">🏏 ${dt}${getLockTime(m)?’ | 🔒 Locks ‘+getLockTime(m):’’}</div>`:''} ${done?`<div style="color:#4ade80;font-size:11px;margin-top:4px">${A.results[id].winner} won</div>`:''} ${timeClosed?'<div style="color:#f87171;font-size:10px;margin-top:4px">Predictions closed</div>':''} ${pc>0?`<div style="color:#444;font-size:10px;margin-top:4px">${pc}/${A.players.length} predicted</div>`:’’}
+
   </div>`;
 }
 async function syncData(){showToast("Syncing...");await load();renderMain();showToast("Synced!")}
 
 // ── VIEW OWN PREDICTION (locked, read-only) ──
 function viewPrediction(id){
-  const m=A.matches[id],myPred=A.predictions?.[id]?.[U.name];if(!m||!myPred)return;
-  const allPreds=A.predictions?.[id]||{};
-  const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
-  ov.innerHTML=`<div class="mod">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Predictions</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
-    <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:18px">
-      <div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div>
-      <span style="color:#444;font-weight:700">vs</span>
-      <div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div>
-    </div>
-    <div style="overflow-x:auto"><table><thead><tr>
-      <th>Player</th><th>Toss</th><th>Target</th><th>Winner</th>
-    </tr></thead><tbody>
-      ${A.players.map(p=>{
-        const pd=allPreds[p.name];
-        if(!pd)return`<tr><td style="font-weight:700;color:#555">${p.name}</td><td style="color:#444">-</td><td style="color:#444">-</td><td style="color:#444">-</td></tr>`;
-        const isMe=p.name===U.name;
-        return`<tr>
-          <td style="font-weight:700;color:${isMe?'#FFCB05':'#bbb'}">${p.name}${isMe?' (you)':''}</td>
-          <td style="color:#ccc">${pd.toss}</td>
-          <td style="color:#FFCB05;font-family:monospace;font-weight:700">${pd.targetLow}-${pd.targetHigh}</td>
-          <td style="color:#ccc">${pd.winner}</td>
-        </tr>`;
-      }).join("")}
-    </tbody></table></div>
-    <div style="text-align:center;color:#f87171;font-size:11px;font-weight:700;margin-top:14px">🔒 All entries are locked once submitted</div>
+const m=A.matches[id],myPred=A.predictions?.[id]?.[U.name];if(!m||!myPred)return;
+const allPreds=A.predictions?.[id]||{};
+const ov=document.createElement(“div”);ov.className=“ov”;ov.id=“modal”;ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ov.innerHTML=`<div class="mod"> <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Predictions</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div> <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:18px"> <div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div> <span style="color:#444;font-weight:700">vs</span> <div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div> </div> <div style="overflow-x:auto"><table><thead><tr> <th>Player</th><th>Toss</th><th>Target</th><th>Winner</th> </tr></thead><tbody> ${A.players.map(p=>{ const pd=allPreds[p.name]; if(!pd)return`<tr><td style="font-weight:700;color:#555">${p.name}</td><td style="color:#444">-</td><td style="color:#444">-</td><td style="color:#444">-</td></tr>`; const isMe=p.name===U.name; return`<tr>
+<td style="font-weight:700;color:${isMe?'#FFCB05':'#bbb'}">${p.name}${isMe?’ (you)’:’’}</td>
+<td style="color:#ccc">${pd.toss}</td>
+<td style="color:#FFCB05;font-family:monospace;font-weight:700">${pd.targetLow}-${pd.targetHigh}</td>
+<td style="color:#ccc">${pd.winner}</td>
+</tr>`;
+}).join(””)}
+</tbody></table></div>
+<div style="text-align:center;color:#f87171;font-size:11px;font-weight:700;margin-top:14px">🔒 All entries are locked once submitted</div>
+
   </div>`;
   document.body.appendChild(ov);
 }
@@ -197,41 +197,25 @@ function viewPrediction(id){
 // ── PREDICT MODAL (one-time only) ──
 let _pt=null,_pw=null;
 function openPredict(id){
-  const m=A.matches[id];if(!m)return;
-  if(A.results[id]){viewResult(id);return}
-  if(A.predictions?.[id]?.[U.name]){viewPrediction(id);return}
-  if(isMatchLocked(m)){showToast("Predictions closed for this match");return}
-  _pt=null;_pw=null;
-  const opts=rangeOptions();
-  const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
-  ov.innerHTML=`<div class="mod">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Your Prediction</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
-    <div style="text-align:center;margin-bottom:6px"><span style="color:#f87171;font-size:10px;font-weight:700">⚠ Once submitted, you cannot change your prediction</span></div>
-    <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:22px">
-      <div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div>
-      <span style="color:#444;font-weight:700">vs</span>
-      <div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div>
-    </div>
-    <div style="margin-bottom:18px"><div class="fl">Who wins the toss? <span class="fp">(2 pts)</span></div>
-      <div style="display:flex;gap:8px">
-        <button class="cb" id="pt-${m.t1}" onclick="selPT('${m.t1}','${m.t2}')">${m.t1}</button>
-        <button class="cb" id="pt-${m.t2}" onclick="selPT('${m.t2}','${m.t1}')">${m.t2}</button>
-      </div>
-    </div>
-    <div style="margin-bottom:18px"><div class="fl">Target score range <span class="fp">(closest wins 3 pts)</span></div>
-      <select id="prange" style="color-scheme:dark;font-size:15px;font-weight:700;text-align:center">
-        <option value="">Select range...</option>
-        ${opts.map(o=>`<option value="${o.low}-${o.high}">${o.label}</option>`).join("")}
-      </select>
-    </div>
-    <div style="margin-bottom:20px"><div class="fl">Who wins the match? <span class="fp">(5 pts)</span></div>
-      <div style="display:flex;gap:8px">
-        <button class="cb" id="pw-${m.t1}" onclick="selPW('${m.t1}','${m.t2}')">${m.t1}</button>
-        <button class="cb" id="pw-${m.t2}" onclick="selPW('${m.t2}','${m.t1}')">${m.t2}</button>
-      </div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;margin-bottom:16px;text-align:center;color:#888;font-size:10px">All 3 correct = +1 bonus point (max 11 per match)</div>
-    <button class="pri" onclick="savePred('${id}')">Submit &amp; Lock</button>
+const m=A.matches[id];if(!m)return;
+if(A.results[id]){viewResult(id);return}
+if(A.predictions?.[id]?.[U.name]){viewPrediction(id);return}
+if(isMatchLocked(m)){showToast(“Predictions closed for this match”);return}
+_pt=null;_pw=null;
+const opts=rangeOptions();
+const ov=document.createElement(“div”);ov.className=“ov”;ov.id=“modal”;ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ov.innerHTML=`<div class="mod"> <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Your Prediction</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div> <div style="text-align:center;margin-bottom:6px"><span style="color:#f87171;font-size:10px;font-weight:700">⚠ Once submitted, you cannot change your prediction</span></div> <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:22px"> <div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div> <span style="color:#444;font-weight:700">vs</span> <div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div> </div> <div style="margin-bottom:18px"><div class="fl">Who wins the toss? <span class="fp">(2 pts)</span></div> <div style="display:flex;gap:8px"> <button class="cb" id="pt-${m.t1}" onclick="selPT('${m.t1}','${m.t2}')">${m.t1}</button> <button class="cb" id="pt-${m.t2}" onclick="selPT('${m.t2}','${m.t1}')">${m.t2}</button> </div> </div> <div style="margin-bottom:18px"><div class="fl">Target score range <span class="fp">(closest wins 3 pts)</span></div> <select id="prange" style="color-scheme:dark;font-size:15px;font-weight:700;text-align:center"> <option value="">Select range...</option> ${opts.map(o=>`<option value="${o.low}-${o.high}">${o.label}</option>`).join(””)}
+</select>
+</div>
+<div style="margin-bottom:20px"><div class="fl">Who wins the match? <span class="fp">(5 pts)</span></div>
+<div style="display:flex;gap:8px">
+<button class="cb" id="pw-${m.t1}" onclick="selPW('${m.t1}','${m.t2}')">${m.t1}</button>
+<button class="cb" id="pw-${m.t2}" onclick="selPW('${m.t2}','${m.t1}')">${m.t2}</button>
+</div>
+</div>
+<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;margin-bottom:16px;text-align:center;color:#888;font-size:10px">All 3 correct = +1 bonus point (max 11 per match)</div>
+<button class="pri" onclick="savePred('${id}')">Submit & Lock</button>
+
   </div>`;
   document.body.appendChild(ov);
 }
@@ -239,68 +223,55 @@ function selPT(s,o){_pt=s;document.getElementById("pt-"+s).style.cssText=csOn(s)
 function selPW(s,o){_pw=s;document.getElementById("pw-"+s).style.cssText=csOn(s);document.getElementById("pw-"+o).style.cssText=csOff}
 
 async function savePred(id){
-  const m=A.matches[id];
-  if(m&&isMatchLocked(m)){showToast("Too late! Predictions are closed.");document.getElementById("modal").remove();return}
-  const rangeVal=document.getElementById("prange").value;
-  if(!_pt||!_pw||!rangeVal){showToast("Fill everything first");return}
-  if(!confirm("Are you sure? Once submitted, you CANNOT change your prediction.")){return}
-  const[low,high]=rangeVal.split("-").map(Number);
-  if(!A.predictions[id])A.predictions[id]={};
-  A.predictions[id][U.name]={toss:_pt,winner:_pw,targetLow:low,targetHigh:high,ts:Date.now()};
-  await save();document.getElementById("modal").remove();renderMain();showToast("Prediction locked! 🔒");
+const m=A.matches[id];
+if(m&&isMatchLocked(m)){showToast(“Too late! Predictions are closed.”);document.getElementById(“modal”).remove();return}
+const rangeVal=document.getElementById(“prange”).value;
+if(!_pt||!_pw||!rangeVal){showToast(“Fill everything first”);return}
+if(!confirm(“Are you sure? Once submitted, you CANNOT change your prediction.”)){return}
+const[low,high]=rangeVal.split(”-”).map(Number);
+if(!A.predictions[id])A.predictions[id]={};
+A.predictions[id][U.name]={toss:_pt,winner:_pw,targetLow:low,targetHigh:high,ts:Date.now()};
+await save();document.getElementById(“modal”).remove();renderMain();showToast(“Prediction locked! 🔒”);
 }
 
 // ── VIEW RESULT ──
-function viewResult(id){const m=A.matches[id],res=A.results[id],pr=A.predictions[id]||{};if(!m||!res)return;const scores=sc(pr,res);const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
-  ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">${m.t1} vs ${m.t2}</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
-    <div style="background:rgba(255,203,5,0.05);border-radius:8px;padding:12px;margin-bottom:14px">
-      <div style="color:#FFCB05;font-size:10px;font-weight:800;margin-bottom:6px;letter-spacing:1px">ACTUAL RESULT</div>
-      <div style="color:#ccc;font-size:12px">Toss: <b style="color:#fff">${res.toss}</b></div>
-      <div style="color:#ccc;font-size:12px">Target Score: <b style="color:#fff;font-family:monospace">${res.targetScore}</b></div>
-      <div style="color:#ccc;font-size:12px">Winner: <b style="color:#4ade80">${res.winner}</b></div>
-    </div>
-    <div style="overflow-x:auto"><table><thead><tr><th>Player</th><th>Toss</th><th>Range</th><th>Winner</th><th>Bonus</th><th style="color:#FFCB05">Pts</th></tr></thead><tbody>
-      ${A.players.map(p=>{const pd=pr[p.name],s=scores[p.name]||{};return`<tr>
-        <td style="font-weight:700;color:${p.name===U.name?'#FFCB05':'#bbb'}">${p.name}</td>
-        <td style="color:${s.toss?'#4ade80':'#555'}">${pd?.toss||'-'}${s.toss?' +2':''}</td>
-        <td style="color:${s.target?'#4ade80':'#555'};font-size:9px">${pd?pd.targetLow+'-'+pd.targetHigh:'-'}${s.target?' +3':''}</td>
-        <td style="color:${s.winner?'#4ade80':'#555'}">${pd?.winner||'-'}${s.winner?' +5':''}</td>
-        <td style="color:${s.bonus?'#4ade80':'#555'}">${s.bonus?'+1':'-'}</td>
-        <td style="font-weight:800;color:#FFCB05;font-size:15px">${s.total||0}</td>
-      </tr>`}).join("")}
-    </tbody></table></div></div>`;
-  document.body.appendChild(ov);
+function viewResult(id){const m=A.matches[id],res=A.results[id],pr=A.predictions[id]||{};if(!m||!res)return;const scores=sc(pr,res);const ov=document.createElement(“div”);ov.className=“ov”;ov.id=“modal”;ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">${m.t1} vs ${m.t2}</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div> <div style="background:rgba(255,203,5,0.05);border-radius:8px;padding:12px;margin-bottom:14px"> <div style="color:#FFCB05;font-size:10px;font-weight:800;margin-bottom:6px;letter-spacing:1px">ACTUAL RESULT</div> <div style="color:#ccc;font-size:12px">Toss: <b style="color:#fff">${res.toss}</b></div> <div style="color:#ccc;font-size:12px">Target Score: <b style="color:#fff;font-family:monospace">${res.targetScore}</b></div> <div style="color:#ccc;font-size:12px">Winner: <b style="color:#4ade80">${res.winner}</b></div> </div> <div style="overflow-x:auto"><table><thead><tr><th>Player</th><th>Toss</th><th>Range</th><th>Winner</th><th>Bonus</th><th style="color:#FFCB05">Pts</th></tr></thead><tbody> ${A.players.map(p=>{const pd=pr[p.name],s=scores[p.name]||{};return`<tr>
+<td style="font-weight:700;color:${p.name===U.name?'#FFCB05':'#bbb'}">${p.name}</td>
+<td style="color:${s.toss?'#4ade80':'#555'}">${pd?.toss||’-’}${s.toss?’ +2’:’’}</td>
+<td style="color:${s.target?'#4ade80':'#555'};font-size:9px">${pd?pd.targetLow+’-’+pd.targetHigh:’-’}${s.target?’ +3’:’’}</td>
+<td style="color:${s.winner?'#4ade80':'#555'}">${pd?.winner||’-’}${s.winner?’ +5’:’’}</td>
+<td style="color:${s.bonus?'#4ade80':'#555'}">${s.bonus?’+1’:’-’}</td>
+<td style="font-weight:800;color:#FFCB05;font-size:15px">${s.total||0}</td>
+</tr>`}).join("")} </tbody></table></div></div>`;
+document.body.appendChild(ov);
 }
 
 // ── ADMIN TAB ──
-function renderAdmin(){const el=document.getElementById("tc"),ml=getSorted(),op=ml.filter(([id])=>!A.results[id]),dn=ml.filter(([id])=>A.results[id]);el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">Admin Panel</span><button class="sec" onclick="openNewMatch()">+ New Match</button></div>${op.length?`<div class="sl">AWAITING RESULTS</div>${op.map(([id,m])=>{const pc=Object.keys(A.predictions?.[id]||{}).length,dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#888;font-size:10px">${pc}/${A.players.length} predicted</span></div><div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Enter Result</button><button class="ghost" style="font-size:10px;padding:4px 10px" onclick="delMatch('${id}')">Delete</button></div></div>`}).join("")}`:''}${dn.length?`<div class="sl" style="margin-top:16px">RESULTS ENTERED</div>${dn.map(([id,m])=>{const res=A.results[id],dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div><div style="color:#ccc;font-size:12px">Target: ${res.targetScore} / Toss: ${res.toss}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Edit Result</button></div></div>`}).join("")}`:''}${ml.length===0?'<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No matches yet.</p><p style="font-size:11px">Tap "+ New Match".</p></div>':''}`}
-async function delMatch(id){if(!confirm("Delete this match?"))return;delete A.matches[id];delete A.predictions[id];delete A.results[id];await save();renderMain();showToast("Deleted")}
+function renderAdmin(){const el=document.getElementById(“tc”),ml=getSorted(),op=ml.filter(([id])=>!A.results[id]),dn=ml.filter(([id])=>A.results[id]);el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">Admin Panel</span><button class="sec" onclick="openNewMatch()">+ New Match</button></div>${op.length?`<div class="sl">AWAITING RESULTS</div>${op.map(([id,m])=>{const pc=Object.keys(A.predictions?.[id]||{}).length,dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#888;font-size:10px">${pc}/${A.players.length} predicted</span></div><div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Enter Result</button><button class="ghost" style="font-size:10px;padding:4px 10px" onclick="delMatch('${id}')">Delete</button></div></div>`}).join(””)}`:''}${dn.length?`<div class="sl" style="margin-top:16px">RESULTS ENTERED</div>${dn.map(([id,m])=>{const res=A.results[id],dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div><div style="color:#ccc;font-size:12px">Target: ${res.targetScore} / Toss: ${res.toss}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Edit Result</button></div></div>`}).join(””)}`:''}${ml.length===0?'<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No matches yet.</p><p style="font-size:11px">Tap "+ New Match".</p></div>':''}`}
+async function delMatch(id){if(!confirm(“Delete this match?”))return;delete A.matches[id];delete A.predictions[id];delete A.results[id];await save();renderMain();showToast(“Deleted”)}
 
-function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+"-"+String(tmrw.getMonth()+1).padStart(2,"0")+"-"+String(tmrw.getDate()).padStart(2,"0");const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Match Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Match Time</div><select id="nmtime" style="color-scheme:dark;font-weight:700"><option value="15:30">3:30 PM</option><option value="19:30" selected>7:30 PM</option></select></div></div><div style="color:#888;font-size:10px;margin-bottom:16px">Predictions lock 30 mins before match time.</div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
-async function createMatch(){const t1=document.getElementById("nm1").value,t2=document.getElementById("nm2").value;if(t1===t2){document.getElementById("nmerr").innerHTML='<p class="err">Pick two different teams</p>';return}const dv=document.getElementById("nmdate").value,tv=document.getElementById("nmtime").value;const dt=dv?(dv+(tv?"T"+tv+":00":"T19:30:00")):null;A.matches["m_"+Date.now()]={t1,t2,date:dt,created:Date.now()};await save();document.getElementById("modal").remove();renderMain();showToast(t1+" vs "+t2+" added!")}
+function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+”-”+String(tmrw.getMonth()+1).padStart(2,“0”)+”-”+String(tmrw.getDate()).padStart(2,“0”);const ov=document.createElement(“div”);ov.className=“ov”;ov.id=“modal”;ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value=”${k}” ${i===1?‘selected’:’’}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Match Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Match Time</div><select id="nmtime" style="color-scheme:dark;font-weight:700"><option value="15:30">3:30 PM</option><option value="19:30" selected>7:30 PM</option></select></div></div><div style="color:#888;font-size:10px;margin-bottom:16px">Predictions lock 30 mins before match time.</div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
+async function createMatch(){const t1=document.getElementById(“nm1”).value,t2=document.getElementById(“nm2”).value;if(t1===t2){document.getElementById(“nmerr”).innerHTML=’<p class="err">Pick two different teams</p>’;return}const dv=document.getElementById(“nmdate”).value,tv=document.getElementById(“nmtime”).value;const dt=dv?(dv+(tv?“T”+tv+”:00”:“T19:30:00”)):null;A.matches[“m_”+Date.now()]={t1,t2,date:dt,created:Date.now()};await save();document.getElementById(“modal”).remove();renderMain();showToast(t1+” vs “+t2+” added!”)}
 
 // ── ENTER RESULT (admin) ──
 let _rt=null,_rw=null;
-function enterResult(id){const m=A.matches[id];if(!m)return;const ex=A.results[id];_rt=ex?.toss||null;_rw=ex?.winner||null;const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
-  ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">${ex?'Edit':'Enter'} Result</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
-    <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:22px"><div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div><span style="color:#444;font-weight:700">vs</span><div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div></div>
-    <div style="margin-bottom:18px"><div class="fl">Who won the toss?</div><div style="display:flex;gap:8px"><button class="cb" id="rt-${m.t1}" onclick="selRT('${m.t1}','${m.t2}')" ${_rt===m.t1?`style="${csOn(m.t1)}"`:''}>${m.t1}</button><button class="cb" id="rt-${m.t2}" onclick="selRT('${m.t2}','${m.t1}')" ${_rt===m.t2?`style="${csOn(m.t2)}"`:''}>${m.t2}</button></div></div>
-    <div style="margin-bottom:18px"><div class="fl">First innings score (target)</div><input class="sinp" id="rts" type="tel" placeholder="201" value="${ex?.targetScore!=null?ex.targetScore:''}" oninput="this.value=this.value.replace(/\\D/g,'')" /></div>
-    <div style="margin-bottom:20px"><div class="fl">Who won the match?</div><div style="display:flex;gap:8px"><button class="cb" id="rw-${m.t1}" onclick="selRW('${m.t1}','${m.t2}')" ${_rw===m.t1?`style="${csOn(m.t1)}"`:''}>${m.t1}</button><button class="cb" id="rw-${m.t2}" onclick="selRW('${m.t2}','${m.t1}')" ${_rw===m.t2?`style="${csOn(m.t2)}"`:''}>${m.t2}</button></div></div>
-    <button class="pri" onclick="saveResult('${id}')">Save Result</button></div>`;
-  document.body.appendChild(ov);
+function enterResult(id){const m=A.matches[id];if(!m)return;const ex=A.results[id];_rt=ex?.toss||null;_rw=ex?.winner||null;const ov=document.createElement(“div”);ov.className=“ov”;ov.id=“modal”;ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">${ex?'Edit':'Enter'} Result</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div> <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:22px"><div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div><span style="color:#444;font-weight:700">vs</span><div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div></div> <div style="margin-bottom:18px"><div class="fl">Who won the toss?</div><div style="display:flex;gap:8px"><button class="cb" id="rt-${m.t1}" onclick="selRT('${m.t1}','${m.t2}')" ${_rt===m.t1?`style=”${csOn(m.t1)}”`:''}>${m.t1}</button><button class="cb" id="rt-${m.t2}" onclick="selRT('${m.t2}','${m.t1}')" ${_rt===m.t2?`style=”${csOn(m.t2)}”`:''}>${m.t2}</button></div></div> <div style="margin-bottom:18px"><div class="fl">First innings score (target)</div><input class="sinp" id="rts" type="tel" placeholder="201" value="${ex?.targetScore!=null?ex.targetScore:''}" oninput="this.value=this.value.replace(/\\D/g,'')" /></div> <div style="margin-bottom:20px"><div class="fl">Who won the match?</div><div style="display:flex;gap:8px"><button class="cb" id="rw-${m.t1}" onclick="selRW('${m.t1}','${m.t2}')" ${_rw===m.t1?`style=”${csOn(m.t1)}”`:''}>${m.t1}</button><button class="cb" id="rw-${m.t2}" onclick="selRW('${m.t2}','${m.t1}')" ${_rw===m.t2?`style=”${csOn(m.t2)}”`:''}>${m.t2}</button></div></div> <button class="pri" onclick="saveResult('${id}')">Save Result</button></div>`;
+document.body.appendChild(ov);
 }
-function selRT(s,o){_rt=s;document.getElementById("rt-"+s).style.cssText=csOn(s);document.getElementById("rt-"+o).style.cssText=csOff}
-function selRW(s,o){_rw=s;document.getElementById("rw-"+s).style.cssText=csOn(s);document.getElementById("rw-"+o).style.cssText=csOff}
-async function saveResult(id){const tsv=document.getElementById("rts").value;if(!_rt||!_rw||!tsv){showToast("Fill everything");return}A.results[id]={toss:_rt,winner:_rw,targetScore:parseInt(tsv,10)};await save();document.getElementById("modal").remove();renderMain();showToast("Result saved! Points updated.")}
+function selRT(s,o){_rt=s;document.getElementById(“rt-”+s).style.cssText=csOn(s);document.getElementById(“rt-”+o).style.cssText=csOff}
+function selRW(s,o){_rw=s;document.getElementById(“rw-”+s).style.cssText=csOn(s);document.getElementById(“rw-”+o).style.cssText=csOff}
+async function saveResult(id){const tsv=document.getElementById(“rts”).value;if(!_rt||!_rw||!tsv){showToast(“Fill everything”);return}A.results[id]={toss:_rt,winner:_rw,targetScore:parseInt(tsv,10)};await save();document.getElementById(“modal”).remove();renderMain();showToast(“Result saved! Points updated.”)}
 
 // ── STANDINGS ──
-function renderStandings(){const el=document.getElementById("tc"),l=lboard(),mc=Object.keys(A.results||{}).length;el.innerHTML=`<div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:2px">Season Standings</div><div style="color:#555;font-size:11px;margin-bottom:18px">${mc} match${mc!==1?'es':''} scored</div>${l.map((p,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:6px;border-radius:8px;background:${i===0&&p.total>0?'rgba(255,203,5,0.06)':'rgba(255,255,255,0.02)'};border:${i===0&&p.total>0?'1px solid rgba(255,203,5,0.25)':'1px solid rgba(255,255,255,0.04)'}"><div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${i===0?'#FFCB05':i===1?'#C0C0C0':i===2?'#CD7F32':'#333'};color:${i<=2?'#111':'#777'}">${i+1}</div><div style="flex:1;color:${p.name===U.name?'#FFCB05':'#ccc'};font-weight:700;font-size:14px">${p.name}${i===0&&mc>0?' 👑':''}</div><div style="font-size:22px;font-weight:800;color:${i===0&&p.total>0?'#FFCB05':'#fff'};font-family:monospace">${p.total}</div><span style="color:#555;font-size:10px">pts</span></div>`).join("")}${mc===0?'<div style="text-align:center;padding:28px;color:#444;font-size:12px">Points appear once admin enters results.</div>':''}`}
+function renderStandings(){const el=document.getElementById(“tc”),l=lboard(),mc=Object.keys(A.results||{}).length;el.innerHTML=`<div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:2px">Season Standings</div><div style="color:#555;font-size:11px;margin-bottom:18px">${mc} match${mc!==1?'es':''} scored</div>${l.map((p,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:6px;border-radius:8px;background:${i===0&&p.total>0?'rgba(255,203,5,0.06)':'rgba(255,255,255,0.02)'};border:${i===0&&p.total>0?'1px solid rgba(255,203,5,0.25)':'1px solid rgba(255,255,255,0.04)'}"><div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:${i===0?'#FFCB05':i===1?'#C0C0C0':i===2?'#CD7F32':'#333'};color:${i<=2?'#111':'#777'}">${i+1}</div><div style="flex:1;color:${p.name===U.name?'#FFCB05':'#ccc'};font-weight:700;font-size:14px">${p.name}${i===0&&mc>0?’ 👑’:’’}</div><div style="font-size:22px;font-weight:800;color:${i===0&&p.total>0?'#FFCB05':'#fff'};font-family:monospace">${p.total}</div><span style="color:#555;font-size:10px">pts</span></div>`).join("")}${mc===0?'<div style="text-align:center;padding:28px;color:#444;font-size:12px">Points appear once admin enters results.</div>':''}`}
 
 // ── HISTORY ──
-function renderHistory(){const el=document.getElementById("tc"),entries=Object.entries(A.results||{}).sort((a,b)=>{const ma=A.matches[a[0]],mb=A.matches[b[0]];const da=ma?.date||ma?.created||0,db=mb?.date||mb?.created||0;return(typeof db==="string"?new Date(db).getTime():db)-(typeof da==="string"?new Date(da).getTime():da)});if(!entries.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;font-size:13px">No completed matches yet.</div>';return}el.innerHTML=`<div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:14px">Match History</div>${entries.map(([mid,res])=>{const m=A.matches[mid],pr=A.predictions?.[mid]||{},s=sc(pr,res),dt=fmtDate(m?.date);return`<div class="crd" style="cursor:pointer" onclick="viewResult('${mid}')"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#bbb;font-size:12px;font-weight:700">${m?.t1||'?'} vs ${m?.t2||'?'}</span><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div>${dt?`<div style="color:#555;font-size:10px;margin-bottom:4px">${dt}</div>`:''}<div style="color:#666;font-size:10px;margin-bottom:6px">Target: ${res.targetScore} / Toss: ${res.toss}</div><div style="display:flex;gap:6px">${A.players.map(p=>`<div style="flex:1;text-align:center;padding:4px 2px;border-radius:4px;background:${(s[p.name]?.total||0)>0?'rgba(255,203,5,0.05)':'transparent'}"><div style="color:#888;font-size:9px;font-weight:700">${p.name}</div><div style="color:${(s[p.name]?.total||0)>0?'#FFCB05':'#444'};font-size:14px;font-weight:800;font-family:monospace">${s[p.name]?.total||0}</div></div>`).join("")}</div></div>`}).join("")}`}
+function renderHistory(){const el=document.getElementById(“tc”),entries=Object.entries(A.results||{}).sort((a,b)=>{const ma=A.matches[a[0]],mb=A.matches[b[0]];const da=ma?.date||ma?.created||0,db=mb?.date||mb?.created||0;return(typeof db===“string”?new Date(db).getTime():db)-(typeof da===“string”?new Date(da).getTime():da)});if(!entries.length){el.innerHTML=’<div style="text-align:center;padding:40px;color:#555;font-size:13px">No completed matches yet.</div>’;return}el.innerHTML=`<div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:14px">Match History</div>${entries.map(([mid,res])=>{const m=A.matches[mid],pr=A.predictions?.[mid]||{},s=sc(pr,res),dt=fmtDate(m?.date);return`<div class="crd" style="cursor:pointer" onclick="viewResult('${mid}')"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#bbb;font-size:12px;font-weight:700">${m?.t1||’?’} vs ${m?.t2||’?’}</span><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div>${dt?`<div style="color:#555;font-size:10px;margin-bottom:4px">${dt}</div>`:’’}<div style="color:#666;font-size:10px;margin-bottom:6px">Target: ${res.targetScore} / Toss: ${res.toss}</div><div style="display:flex;gap:6px">${A.players.map(p=>`<div style="flex:1;text-align:center;padding:4px 2px;border-radius:4px;background:${(s[p.name]?.total||0)>0?'rgba(255,203,5,0.05)':'transparent'}"><div style="color:#888;font-size:9px;font-weight:700">${p.name}</div><div style="color:${(s[p.name]?.total||0)>0?'#FFCB05':'#444'};font-size:14px;font-weight:800;font-family:monospace">${s[p.name]?.total||0}</div></div>`).join(””)}</div></div>`}).join("")}`}
 
 (async()=>{await load();render()})();
 </script>
+
 </body>
 </html>
