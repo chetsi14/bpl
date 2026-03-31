@@ -140,22 +140,18 @@ function renderMain(){const l=lboard(),admin=isAdmin();const tl=[["matches","Mat
 function getSorted(){return Object.entries(A.matches).sort((a,b)=>{const da=a[1].date||a[1].created,db=b[1].date||b[1].created;return(typeof da==="string"?new Date(da).getTime():da)-(typeof db==="string"?new Date(db).getTime():db)})}
 
 let mFilter="today"; // today | upcoming | past | all
-function isToday(m){if(!m.date)return false;try{const d=new Date(m.date),now=new Date();return d.getDate()===now.getDate()&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}catch{return false}}
-function isFuture(m){if(!m.date)return false;try{const d=new Date(m.date),now=new Date();const dDay=new Date(d.getFullYear(),d.getMonth(),d.getDate());const nDay=new Date(now.getFullYear(),now.getMonth(),now.getDate());return dDay>nDay}catch{return false}}
-function isPast(m){return!isToday(m)&&!isFuture(m)}
+function matchDay(m){if(!m.date)return"none";try{const d=new Date(m.date),now=new Date();const dDay=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();const nDay=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();if(dDay===nDay)return"today";if(dDay>nDay)return"upcoming";return"past"}catch{return"none"}}
 
 // ── MATCHES TAB ──
 function renderMatches(){
   const el=document.getElementById("tc"),ml=getSorted();
-  // Count for badges
-  const todayCount=ml.filter(([_,m])=>isToday(m)).length;
-  const upcomingCount=ml.filter(([_,m])=>isFuture(m)).length;
-  const pastCount=ml.filter(([id,m])=>isPast(m)||A.results[id]).length;
-  // Apply filter
+  const todayCount=ml.filter(([_,m])=>matchDay(m)==="today").length;
+  const upcomingCount=ml.filter(([_,m])=>matchDay(m)==="upcoming").length;
+  const pastCount=ml.filter(([_,m])=>matchDay(m)==="past"||matchDay(m)==="none").length;
   let filtered=ml;
-  if(mFilter==="today")filtered=ml.filter(([_,m])=>isToday(m));
-  else if(mFilter==="upcoming")filtered=ml.filter(([_,m])=>isFuture(m));
-  else if(mFilter==="past")filtered=ml.filter(([id,m])=>isPast(m)||A.results[id]);
+  if(mFilter==="today")filtered=ml.filter(([_,m])=>matchDay(m)==="today");
+  else if(mFilter==="upcoming")filtered=ml.filter(([_,m])=>matchDay(m)==="upcoming");
+  else if(mFilter==="past")filtered=ml.filter(([_,m])=>matchDay(m)==="past"||matchDay(m)==="none");
   const op=filtered.filter(([id])=>!A.results[id]);
   const dn=filtered.filter(([id])=>A.results[id]);
 
