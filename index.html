@@ -119,7 +119,8 @@ function lboard(){const tots={};for(const p of A.players)tots[p.name]=0;for(cons
 // Score range options (10-run ranges)
 function rangeOptions(){const opts=[];for(let i=80;i<=260;i+=10){opts.push({low:i,high:i+9,label:`${i}-${i+9}`})}return opts}
 
-function isMatchLocked(m){if(!m.date)return false;try{return new Date()>=new Date(m.date)}catch{return false}}
+function isMatchLocked(m){if(!m.date)return false;try{const matchTime=new Date(m.date);const lockTime=new Date(matchTime.getTime()-30*60*1000);return new Date()>=lockTime}catch{return false}}
+function getLockTime(m){if(!m.date)return"";try{const mt=new Date(m.date);const lt=new Date(mt.getTime()-30*60*1000);return lt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}catch{return""}}
 
 async function render(){if(!A.players.length){renderSetup();return}if(!U){renderLogin();return}await load();renderMain()}
 
@@ -153,7 +154,7 @@ function mCard(id,m,done){
       ${done?'<span class="tg tg-d">RESULT</span>':locked?'<span class="tg tg-lock">LOCKED</span>':timeClosed?'<span class="tg tg-lock">CLOSED</span>':hp?'<span class="tg tg-g">PREDICTED</span>':'<span class="tg tg-y">PREDICT</span>'}
     </div>
     <div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>
-    ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">🔒 ${dt}</div>`:''}
+    ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">🏏 ${dt}${getLockTime(m)?' | 🔒 Locks '+getLockTime(m):''}</div>`:''}
     ${done?`<div style="color:#4ade80;font-size:11px;margin-top:4px">${A.results[id].winner} won</div>`:''}
     ${timeClosed?'<div style="color:#f87171;font-size:10px;margin-top:4px">Predictions closed</div>':''}
     ${pc>0?`<div style="color:#444;font-size:10px;margin-top:4px">${pc}/${A.players.length} predicted</div>`:''}
@@ -163,21 +164,32 @@ async function syncData(){showToast("Syncing...");await load();renderMain();show
 
 // ── VIEW OWN PREDICTION (locked, read-only) ──
 function viewPrediction(id){
-  const m=A.matches[id],p=A.predictions?.[id]?.[U.name];if(!m||!p)return;
+  const m=A.matches[id],myPred=A.predictions?.[id]?.[U.name];if(!m||!myPred)return;
+  const allPreds=A.predictions?.[id]||{};
   const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
   ov.innerHTML=`<div class="mod">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Your Prediction (Locked)</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
-    <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">Predictions</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div>
+    <div style="display:flex;justify-content:center;gap:14px;align-items:center;margin-bottom:18px">
       <div style="text-align:center">${bg(m.t1)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t1}</div></div>
       <span style="color:#444;font-weight:700">vs</span>
       <div style="text-align:center">${bg(m.t2)}<div style="color:#bbb;font-size:10px;margin-top:4px">${m.t2}</div></div>
     </div>
-    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px;margin-bottom:16px">
-      <div style="color:#ccc;font-size:12px;margin-bottom:8px">Toss: <b style="color:#FFCB05">${p.toss}</b></div>
-      <div style="color:#ccc;font-size:12px;margin-bottom:8px">Target Score: <b style="color:#FFCB05">${p.targetLow}-${p.targetHigh}</b></div>
-      <div style="color:#ccc;font-size:12px">Winner: <b style="color:#FFCB05">${p.winner}</b></div>
-    </div>
-    <div style="text-align:center;color:#f87171;font-size:11px;font-weight:700">🔒 Entry locked. Cannot be changed.</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>Player</th><th>Toss</th><th>Target</th><th>Winner</th>
+    </tr></thead><tbody>
+      ${A.players.map(p=>{
+        const pd=allPreds[p.name];
+        if(!pd)return`<tr><td style="font-weight:700;color:#555">${p.name}</td><td style="color:#444">-</td><td style="color:#444">-</td><td style="color:#444">-</td></tr>`;
+        const isMe=p.name===U.name;
+        return`<tr>
+          <td style="font-weight:700;color:${isMe?'#FFCB05':'#bbb'}">${p.name}${isMe?' (you)':''}</td>
+          <td style="color:#ccc">${pd.toss}</td>
+          <td style="color:#FFCB05;font-family:monospace;font-weight:700">${pd.targetLow}-${pd.targetHigh}</td>
+          <td style="color:#ccc">${pd.winner}</td>
+        </tr>`;
+      }).join("")}
+    </tbody></table></div>
+    <div style="text-align:center;color:#f87171;font-size:11px;font-weight:700;margin-top:14px">🔒 All entries are locked once submitted</div>
   </div>`;
   document.body.appendChild(ov);
 }
@@ -264,7 +276,7 @@ function viewResult(id){const m=A.matches[id],res=A.results[id],pr=A.predictions
 function renderAdmin(){const el=document.getElementById("tc"),ml=getSorted(),op=ml.filter(([id])=>!A.results[id]),dn=ml.filter(([id])=>A.results[id]);el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">Admin Panel</span><button class="sec" onclick="openNewMatch()">+ New Match</button></div>${op.length?`<div class="sl">AWAITING RESULTS</div>${op.map(([id,m])=>{const pc=Object.keys(A.predictions?.[id]||{}).length,dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#888;font-size:10px">${pc}/${A.players.length} predicted</span></div><div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Enter Result</button><button class="ghost" style="font-size:10px;padding:4px 10px" onclick="delMatch('${id}')">Delete</button></div></div>`}).join("")}`:''}${dn.length?`<div class="sl" style="margin-top:16px">RESULTS ENTERED</div>${dn.map(([id,m])=>{const res=A.results[id],dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div><div style="color:#ccc;font-size:12px">Target: ${res.targetScore} / Toss: ${res.toss}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Edit Result</button></div></div>`}).join("")}`:''}${ml.length===0?'<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No matches yet.</p><p style="font-size:11px">Tap "+ New Match".</p></div>':''}`}
 async function delMatch(id){if(!confirm("Delete this match?"))return;delete A.matches[id];delete A.predictions[id];delete A.results[id];await save();renderMain();showToast("Deleted")}
 
-function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+"-"+String(tmrw.getMonth()+1).padStart(2,"0")+"-"+String(tmrw.getDate()).padStart(2,"0");const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Match Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Lock Time</div><input id="nmtime" type="time" value="19:30" style="color-scheme:dark" /></div></div><div style="color:#888;font-size:10px;margin-bottom:16px">Predictions close at this time. No entries accepted after.</div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
+function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+"-"+String(tmrw.getMonth()+1).padStart(2,"0")+"-"+String(tmrw.getDate()).padStart(2,"0");const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Match Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Match Time</div><select id="nmtime" style="color-scheme:dark;font-weight:700"><option value="15:30">3:30 PM</option><option value="19:30" selected>7:30 PM</option></select></div></div><div style="color:#888;font-size:10px;margin-bottom:16px">Predictions lock 30 mins before match time.</div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
 async function createMatch(){const t1=document.getElementById("nm1").value,t2=document.getElementById("nm2").value;if(t1===t2){document.getElementById("nmerr").innerHTML='<p class="err">Pick two different teams</p>';return}const dv=document.getElementById("nmdate").value,tv=document.getElementById("nmtime").value;const dt=dv?(dv+(tv?"T"+tv+":00":"T19:30:00")):null;A.matches["m_"+Date.now()]={t1,t2,date:dt,created:Date.now()};await save();document.getElementById("modal").remove();renderMain();showToast(t1+" vs "+t2+" added!")}
 
 // ── ENTER RESULT (admin) ──
