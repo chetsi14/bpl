@@ -119,6 +119,8 @@ function lboard(){const tots={};for(const p of A.players)tots[p.name]=0;for(cons
 // Score range options (10-run ranges)
 function rangeOptions(){const opts=[];for(let i=80;i<=260;i+=10){opts.push({low:i,high:i+9,label:`${i}-${i+9}`})}return opts}
 
+function isMatchLocked(m){if(!m.date)return false;try{return new Date()>=new Date(m.date)}catch{return false}}
+
 async function render(){if(!A.players.length){renderSetup();return}if(!U){renderLogin();return}await load();renderMain()}
 
 // ── SETUP ──
@@ -143,14 +145,17 @@ function mCard(id,m,done){
   const pc=Object.keys(A.predictions?.[id]||{}).length;
   const dt=fmtDate(m.date);
   const locked=!!hp&&!done;
-  return`<div class="crd" style="cursor:pointer" onclick="${done?`viewResult('${id}')`:hp?`viewPrediction('${id}')`:`openPredict('${id}')`}">
+  const timeClosed=!done&&!hp&&isMatchLocked(m);
+  const clickAction=done?`viewResult('${id}')`:hp?`viewPrediction('${id}')`:timeClosed?'':`openPredict('${id}')`;
+  return`<div class="crd" style="cursor:${timeClosed?'default':'pointer'};${timeClosed?'opacity:0.5':''}" ${clickAction?`onclick="${clickAction}"`:''}>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div>
-      ${done?'<span class="tg tg-d">RESULT</span>':locked?'<span class="tg tg-lock">LOCKED</span>':hp?'<span class="tg tg-g">PREDICTED</span>':'<span class="tg tg-y">PREDICT</span>'}
+      ${done?'<span class="tg tg-d">RESULT</span>':locked?'<span class="tg tg-lock">LOCKED</span>':timeClosed?'<span class="tg tg-lock">CLOSED</span>':hp?'<span class="tg tg-g">PREDICTED</span>':'<span class="tg tg-y">PREDICT</span>'}
     </div>
     <div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>
-    ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}
+    ${dt?`<div style="color:#666;font-size:10px;margin-top:2px">🔒 ${dt}</div>`:''}
     ${done?`<div style="color:#4ade80;font-size:11px;margin-top:4px">${A.results[id].winner} won</div>`:''}
+    ${timeClosed?'<div style="color:#f87171;font-size:10px;margin-top:4px">Predictions closed</div>':''}
     ${pc>0?`<div style="color:#444;font-size:10px;margin-top:4px">${pc}/${A.players.length} predicted</div>`:''}
   </div>`;
 }
@@ -182,7 +187,8 @@ let _pt=null,_pw=null;
 function openPredict(id){
   const m=A.matches[id];if(!m)return;
   if(A.results[id]){viewResult(id);return}
-  if(A.predictions?.[id]?.[U.name]){viewPrediction(id);return} // already predicted = locked
+  if(A.predictions?.[id]?.[U.name]){viewPrediction(id);return}
+  if(isMatchLocked(m)){showToast("Predictions closed for this match");return}
   _pt=null;_pw=null;
   const opts=rangeOptions();
   const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
@@ -221,6 +227,8 @@ function selPT(s,o){_pt=s;document.getElementById("pt-"+s).style.cssText=csOn(s)
 function selPW(s,o){_pw=s;document.getElementById("pw-"+s).style.cssText=csOn(s);document.getElementById("pw-"+o).style.cssText=csOff}
 
 async function savePred(id){
+  const m=A.matches[id];
+  if(m&&isMatchLocked(m)){showToast("Too late! Predictions are closed.");document.getElementById("modal").remove();return}
   const rangeVal=document.getElementById("prange").value;
   if(!_pt||!_pw||!rangeVal){showToast("Fill everything first");return}
   if(!confirm("Are you sure? Once submitted, you CANNOT change your prediction.")){return}
@@ -256,7 +264,7 @@ function viewResult(id){const m=A.matches[id],res=A.results[id],pr=A.predictions
 function renderAdmin(){const el=document.getElementById("tc"),ml=getSorted(),op=ml.filter(([id])=>!A.results[id]),dn=ml.filter(([id])=>A.results[id]);el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="color:#fff;font-size:15px;font-weight:700">Admin Panel</span><button class="sec" onclick="openNewMatch()">+ New Match</button></div>${op.length?`<div class="sl">AWAITING RESULTS</div>${op.map(([id,m])=>{const pc=Object.keys(A.predictions?.[id]||{}).length,dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#888;font-size:10px">${pc}/${A.players.length} predicted</span></div><div style="color:#ccc;font-size:13px;font-weight:600">${m.t1} vs ${m.t2}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Enter Result</button><button class="ghost" style="font-size:10px;padding:4px 10px" onclick="delMatch('${id}')">Delete</button></div></div>`}).join("")}`:''}${dn.length?`<div class="sl" style="margin-top:16px">RESULTS ENTERED</div>${dn.map(([id,m])=>{const res=A.results[id],dt=fmtDate(m.date);return`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:6px;align-items:center">${bg(m.t1)}<span style="color:#444;font-size:11px;font-weight:700">vs</span>${bg(m.t2)}</div><span style="color:#4ade80;font-size:10px;font-weight:700">${res.winner} won</span></div><div style="color:#ccc;font-size:12px">Target: ${res.targetScore} / Toss: ${res.toss}</div>${dt?`<div style="color:#666;font-size:10px;margin-top:2px">${dt}</div>`:''}<div style="margin-top:8px"><button class="sec" style="font-size:10px;padding:4px 10px" onclick="enterResult('${id}')">Edit Result</button></div></div>`}).join("")}`:''}${ml.length===0?'<div style="text-align:center;padding:40px;color:#555"><p style="font-size:13px">No matches yet.</p><p style="font-size:11px">Tap "+ New Match".</p></div>':''}`}
 async function delMatch(id){if(!confirm("Delete this match?"))return;delete A.matches[id];delete A.predictions[id];delete A.results[id];await save();renderMain();showToast("Deleted")}
 
-function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+"-"+String(tmrw.getMonth()+1).padStart(2,"0")+"-"+String(tmrw.getDate()).padStart(2,"0");const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Time</div><input id="nmtime" type="time" value="19:30" style="color-scheme:dark" /></div></div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
+function openNewMatch(){const now=new Date(),tmrw=new Date(now.getTime()+24*60*60*1000);const ds=tmrw.getFullYear()+"-"+String(tmrw.getMonth()+1).padStart(2,"0")+"-"+String(tmrw.getDate()).padStart(2,"0");const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.innerHTML=`<div class="mod"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><span style="color:#fff;font-size:15px;font-weight:700">New Match</span><button class="xbtn" onclick="document.getElementById('modal').remove()">✕</button></div><div style="margin-bottom:16px"><div class="fl">Team 1</div><select id="nm1">${TK.map(k=>`<option value="${k}">${k} - ${T[k].f}</option>`).join("")}</select></div><div style="margin-bottom:16px"><div class="fl">Team 2</div><select id="nm2">${TK.map((k,i)=>`<option value="${k}" ${i===1?'selected':''}>${k} - ${T[k].f}</option>`).join("")}</select></div><div style="display:flex;gap:10px;margin-bottom:20px"><div style="flex:1"><div class="fl">Match Date</div><input id="nmdate" type="date" value="${ds}" style="color-scheme:dark" /></div><div style="flex:1"><div class="fl">Lock Time</div><input id="nmtime" type="time" value="19:30" style="color-scheme:dark" /></div></div><div style="color:#888;font-size:10px;margin-bottom:16px">Predictions close at this time. No entries accepted after.</div><div id="nmerr"></div><button class="pri" onclick="createMatch()">Create Match</button></div>`;document.body.appendChild(ov)}
 async function createMatch(){const t1=document.getElementById("nm1").value,t2=document.getElementById("nm2").value;if(t1===t2){document.getElementById("nmerr").innerHTML='<p class="err">Pick two different teams</p>';return}const dv=document.getElementById("nmdate").value,tv=document.getElementById("nmtime").value;const dt=dv?(dv+(tv?"T"+tv+":00":"T19:30:00")):null;A.matches["m_"+Date.now()]={t1,t2,date:dt,created:Date.now()};await save();document.getElementById("modal").remove();renderMain();showToast(t1+" vs "+t2+" added!")}
 
 // ── ENTER RESULT (admin) ──
