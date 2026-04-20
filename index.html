@@ -190,7 +190,7 @@ function mCard(id,m,done){
 async function syncData(){showToast("Syncing...");await load();renderMain();showToast("Synced!")}
 
 // ── VIEW OWN PREDICTION (locked, read-only) ──
-function viewPrediction(id){
+async function viewPrediction(id){   await load();
   const m=A.matches[id],myPred=A.predictions?.[id]?.[U.name];if(!m||!myPred)return;
   const allPreds=A.predictions?.[id]||{};
   const ov=document.createElement("div");ov.className="ov";ov.id="modal";ov.onclick=e=>{if(e.target===ov)ov.remove()};
